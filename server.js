@@ -41,7 +41,16 @@ app.use(session({ secret: "keyboard cat", resave: true, saveUninitialized: true 
 app.use(passport.initialize());
 app.use(passport.session());
 // Static directory
-app.use(express.static("public"));
+
+app.use(express.static("app/public"));          //res.render for all routes, cannot render with static
+
+var exphbs = require("express-handlebars");       //*
+
+app.engine("handlebars", exphbs({
+  defaultLayout: "main"
+}));
+app.set("view engine", "handlebars");         //*
+
 
 // Routes
 // =============================================================
@@ -52,13 +61,13 @@ require("./app/routes/html-routes")(app);
 
 // Syncing our sequelize models and then starting our Express app
 // =============================================================
-db.sequelize.sync({ force: true, logging: console.log  })
+db.sequelize.sync({ force: false, logging: console.log  })
 .then(function() {
   app.listen(PORT, function() {
     console.log("App listening on PORT " + PORT);
   });
 }).then(function () { 
-  return sequelize_fixtures.loadFile('./seeds.json', db)
+  // return sequelize_fixtures.loadFile('./seeds.json', db)
 
  })
 .then(function(){

@@ -1,76 +1,104 @@
 $(document).ready(function() {
 	$('#add-btn').on('click', function(event) {
 		event.preventDefault();
-		console.log($('#title').val().trim());
-		console.log($("#author").val().trim());
+		var key = 'AIzaSyDB0TwWP5ouoFr37dmNo1r9HCRWzg3czsk';
 
-		/*var newBook = {
-		title = $("#title").val().trim(),
-	 	author = $("#author").val().trim(),
-	 	genre = $("#genre").val().trim(),
-	 	description = $("#description").val().trim(),
-	 	isbn = $("#ibsn").val().trim()
-	};
+		var title = $('#title')
+			.val()
+			.trim();
+		var author = $('#author')
+			.val()
+			.trim();
+		var isbn = $('#isbn')
+			.val()
+			.trim()
+			.replace(/\D/g, '');
+		console.log('title: ' + title + '\nauthor: ' + author + '\nISBN: ' + isbn);
 
-	console.log(newBook);
-	
-	
-	var https = require('https');
-	var path = '/books/v1/volumes?q=isbn:' + newBook.isbn + '&key=AIzaSyDB0TwWP5ouoFr37dmNo1r9HCRWzg3czsk';
+		function searchBook() {
+			var queryURL;
 
-	var options = {
-		host: 'www.googleapis.com',
-		path: path,
-	};
+			if (isbn) {
+				var queryURL = 'https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn + '&key=' + key;
+			} else {
+				if (!title) {
+					var queryURL = 'https://www.googleapis.com/books/v1/volumes?q=inauthor:' + author + '&key=' + key;
+				} else if (!author) {
+					var queryURL = 'https://www.googleapis.com/books/v1/volumes?q=intitle:' + title + '&key=' + key;
+				} else {
+					var queryURL =
+						'https://www.googleapis.com/books/v1/volumes?q=intitle:' +
+						title +
+						'+inauthor:' +
+						author +
+						'&key=' +
+						key;
+				}
+			}
+			queryURL = queryURL.replace(/ /g, '%20');
+			console.log(queryURL);
 
-	var str = '';
-	var objectJSON;
+			$.ajax({
+				url: queryURL,
+				method: 'GET',
+			}).then(function(response) {
+				// Printing the entire object to console
+				console.log(response);
 
-	//Initiating the request that gets book data
-	https
-		.request(options, function(res) {
-			res.on('data', function(chunk) {
-				str += chunk;
+				// Empty the contents of the book-results div
+				$('#book-results').empty();
+
+				if (response.totalItems == 0) {
+					var noBooks = $('<h4>').text('No books found!');
+					$('#book-results').append(noBooks);
+				} else {
+					// Constructing HTML containing the book information
+					for (let i = 0; i < response.items.length; i++) {
+						var bookImage = $('<img>').attr(
+							'src',
+							'https://books.google.com/books?id=' +
+								response.items[i].id +
+								'&printsec=frontcover&img=1&zoom=1&edge=nocurl&source=gbs_api'
+						);
+						var bookTitle = $('<h4>').text(response.items[i].volumeInfo.title);
+						var bookAuthor = $('<h5>').text(response.items[i].volumeInfo.authors[0]);
+						var bookGenre = $('<h5>').text(response.items[i].volumeInfo.categories[0]);
+						var bookDescription = $('<p>').text(response.items[i].volumeInfo.description);
+						var date = new Date(response.items[i].volumeInfo.publishedDate);
+						var bookYear = $('<p>').text('Published: ' + date.getFullYear());
+						var bookPages = $('<p>').text(response.items[i].volumeInfo.pageCount + ' pages');
+						var bookCondition = $("<select id='condition'>").html(
+							"<option value='Like New' selected='selected'>Like New</option><option value='Good'>Good</option><option value='Fair'>Fair</option><option value='Poor'>Poor</option>"
+						);
+						var bookSelect = $("<button class='select-book'>")
+							.attr('href', '')
+							.text('Add this book');
+						var lineBreak = $('</br>');
+
+						// Append the new book content
+						$('#book-results').append(
+							lineBreak,
+							bookImage,
+							bookTitle,
+							bookAuthor,
+							bookGenre,
+							bookDescription,
+							bookYear,
+							bookPages,
+							bookCondition,
+							bookSelect
+						);
+					}
+				}
 			});
-			res.on('end', function() {
-				objectJSON = JSON.parse(str);
-			});
-		})
+		}
 
-.end();
+		searchBook();
+	});
 
-return objectJSON;
-});
-
-
-//prints the book object
-console.log(objectJSON[0].items[0] + '================\n');
-
-var resISBN = isbn;
-	console.log(resISBN + '\n');
-
-var resTitle = objectJSON.items[0].volumeInfo.title;
-	console.log(resTitle + '\n');
-
-var resAuthor = objectJSON.items[0].volumeInfo.authors[0];
-	console.log(resAuthor + '\n');
-
-var resGenre = objectJSON.items[0].volumeInfo.categories[0];
-	console.log(resGenre + '\n');
-
-var resDescription = objectJSON.items[0].volumeInfo.description;
-	console.log(resDescription + '\n');
-
-var date = new Date(objectJSON.items[0].volumeInfo.publishedDate);
-var resYear = date.getFullYear();
-	console.log(resYear + '\n');
-
-var resPages = objectJSON.items[0].volumeInfo.pageCount;
-console.log(resPages + '\n');
-
-var resImage = "https://books.google.com/books/content?id=" + objectJSON[0].items[0].id + "&printsec=frontcover&img=1&zoom=2&edge=nocurl&source=gbs_api";
-	console.log(resImage + '\n');
-
-	*/
+	$('#clear').on('click', function(event) {
+		$('#title').text('');
+		$('#author').text('');
+		$('#isbn').text('');
 	});
 });
